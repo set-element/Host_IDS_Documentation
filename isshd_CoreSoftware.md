@@ -30,10 +30,7 @@ which allows the code base for isshd keep track with the current OpenSSH and HPN
 
 ### Download and Configuration
 
-To download the code:
-	git clone https://github.com/set-element/openssh-hpn-isshd.git
-
-
+First download the code:
 
 ```
 [scottc@green-m ~]$ git clone https://github.com/set-element/openssh-hpn-isshd.git
@@ -46,4 +43,86 @@ Resolving deltas: 100% (36209/36209), done.
 [scottc@green-m ~]$
 ```
 
+Then switch to the isshd repo:
 
+```
+[scottc@green-m ~]$ cd openssh-hpn-isshd/
+[scottc@green-m openssh-hpn-isshd]$ git checkout isshd
+Branch isshd set up to track remote branch isshd from origin.
+Switched to a new branch 'isshd'
+[scottc@green-m openssh-hpn-isshd]$
+```
+
+And run autoheader and autoconf to set up the configure and config.h.in files.
+
+```
+scottc@green-m openssh-hpn-isshd]$
+[scottc@green-m openssh-hpn-isshd]$ autoheader
+[scottc@green-m openssh-hpn-isshd]$ autoconf
+[scottc@green-m openssh-hpn-isshd]$
+```
+
+For the next step, run configure with one or more of the following options:
+```
+  --with-nerscmod           Add sshd instrumentation
+
+  --with-stunnelport=PORT   Set stunnel port if other than 799/tcp
+  --with-stunnelhost=HOST   Set stunnel host if other than localhost.  Do not quote.
+  --with-passwdrec          Record password data
+```
+
+The most common option is "--with-nerscmod" which will turn on all the auditing features.  The stunnel config options tells the isshd where to put the logging data (which is assumed to be a socket of some kind).  The "--with-passwdrec" option will enable the recording of passwords its use is *strongly* discouraged since they will be put into the general logs in cleartext.
+
+At this point we will do a routine install on this system, setting up the base directory away from the usual /usr.  For example:
+
+```
+[scottc@green-m openssh-hpn-isshd]$ ./configure --with-nerscmod --prefix="/home/scottc/ISSHD_INSTALL"
+checking for gcc... gcc
+checking for C compiler default output file name... a.out
+checking whether the C compiler works... yes
+checking whether we are cross compiling... no
+checking for suffix of executables...
+checking for suffix of object files... o
+checking whether we are using the GNU C compiler... yes
+checking whether gcc accepts -g... yes
+
+(snipping out huge volumes of config logs)
+
+OpenSSH has been configured with the following options:
+                     User binaries: /home/scottc/ISSHD_INSTALL/bin
+                   System binaries: /home/scottc/ISSHD_INSTALL/sbin
+               Configuration files: /home/scottc/ISSHD_INSTALL/etc
+                   Askpass program: /home/scottc/ISSHD_INSTALL/libexec/ssh-askpass
+                      Manual pages: /home/scottc/ISSHD_INSTALL/share/man/manX
+                          PID file: /var/run
+  Privilege separation chroot path: /var/empty
+            sshd default user PATH: /usr/bin:/bin:/usr/sbin:/sbin:/home/scottc/ISSHD_INSTALL/bin
+                    Manpage format: doc
+                       PAM support: no
+                   OSF SIA support: no
+                 KerberosV support: no
+                   SELinux support: no
+                 Smartcard support:
+                     S/KEY support: no
+              MD5 password support: no
+                   libedit support: no
+  Solaris process contract support: no
+           Solaris project support: no
+       IP address in $DISPLAY hack: no
+           Translate v4 in v6 hack: yes
+                  BSD Auth support: no
+              Random number source: OpenSSL internal ONLY
+              NERSC Mods          : yes
+              STUNNEL Host        : localhost
+              STUNNEL Port        : 799
+              Record Passwd Data  : no
+             Privsep sandbox style: rlimit
+
+              Host: x86_64-unknown-linux-gnu
+          Compiler: gcc
+    Compiler flags: -g -O2 -Wall -Wpointer-arith -Wuninitialized -Wsign-compare -Wformat-security -Wno-pointer-sign -fno-strict-aliasing -D_FORTIFY_SOURCE=2 -ftrapv -fno-builtin-memset -fstack-protector-all -fPIE
+Preprocessor flags:
+      Linker flags:  -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -fstack-protector-all -pie
+         Libraries: -lcrypto -lrt -ldl -lutil -lz -lnsl  -lcrypt -lresolv
+```
+Now just run 'make' and 'make install' and iSSHD will be installed.  Additional (normal) configuration can be done as per the usual OpenSSH software so I will skip that.
