@@ -114,8 +114,56 @@ Checking connectivity... done
 
 The isshd_policy contains all the policy related to the logging and analysis of the ssh keystroke and metadata stream.  The host_core is more of an infrastructure framework and is required for keeping track of a number of things.  It provides a nice agnostic place to plug the various sources (like isshd, syslog etc) so that information like user authentication has a nice place to live.
 
-To load the 
+To load the policies on a standalone system, make the local.bro file into something like this:
+
+```
+@load host_core
+@load isshd_policy
+
+redef SSHD_IN_STREAM::data_file = "/data/sshd_logs/ssh_logging";
+redef SSHD_IN_STREAM::DATANODE = T;
+```
+
+with the value expressed in SSHD_IN_STREAM::data_file being the location of the isshd data file.  This file will be read in a 'tail -f' manner
 
 
-#### iSSHD
+### iSSHD
+The set of files used to run and configure this are as follows:
+
+-----
+Files:
+```
+        README.md                    you are here
+        __load__.bro                 policy autoloader
+        functions.bif.patch          patch for raw_unescape_URI() bif
+        init_node.bro                if node is an isshd analyzer and this is a cluster
+
+        sshd_const.bro               const values across the package
+        sshd_input_stream.bro        reads text datastream and turns into events
+        sshd_core_cluster.bro        log events
+        sshd_policy_cluster.bro      apply local sec policy against events
+        sshd_sftp3_cluster.bro       log sftp traffic
+
+        sshd_cert_data.bro           list of known poor certs - not tremendous utility in running
+        sshd_signatures.bro          list of suspicous and hostile actions
+
+        sshd_input_stream_depricated.bro  DEPRICATED: input framework functions and defs for v1 and v2 events
+        sshd_sftp_cluster.bro             DEPRICATED: sftp analyzer for older versions of isshd
+        sshd_analyzer_cluster.bro         DEPRECATED: old isshd analyzer
+```
+
+From a configuration perspectivem the most interesting files to look at are sshd_signatures.bro which defines what is interesting to the policy, sshd_policy_cluster.bro which events should see notices, and host_core/notice_action.bro which tells bro where to route the notice type (log/email/page).
+
+####  sshd_signatures.bro 
+
+
+
+#### sshd_policy_cluster.bro
+
+
+
+####  host_core/notice_action.bro
+
+
+
 
