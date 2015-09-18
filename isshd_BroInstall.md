@@ -151,19 +151,69 @@ Files:
         sshd_sftp_cluster.bro             DEPRICATED: sftp analyzer for older versions of isshd
         sshd_analyzer_cluster.bro         DEPRECATED: old isshd analyzer
 ```
+The role of the core policy is to provide basic logging, the maintenance of session state and various bookeeping functions.  The sshd_policy describes the local site security configuration and is designed to be much more flexible .
 
-From a configuration perspectivem the most interesting files to look at are sshd_signatures.bro which defines what is interesting to the policy, sshd_policy_cluster.bro which events should see notices, and host_core/notice_action.bro which tells bro where to route the notice type (log/email/page).
+
+From a configuration perspective the most interesting files to look at are sshd_signatures.bro which defines what is interesting to the policy, sshd_policy_cluster.bro which events should see notices, and host_core/notice_action.bro which tells bro where to route the notice type (log/email/page).
 
 ####  sshd_signatures.bro 
+The sshd_signatures file contains sets of regular expressions that identify user behaviors that are considered hostile, suspicious or of interest to the analyzer operator.  In the event that a match needs to be added or removed, it is *highly* suggested that the original policy files not be changed.
 
+For example if the signature "/SCOTTTEST_IN/" is, for whatever reason causing you grief, you can remove it by adding the following line in the local.bro :
+
+	redef SSHD_POLICY::input_trouble_whitelist += /SCOTTTEST_IN/;
+
+which will cause the string "SCOTTTEST_IN" to be ignored in the incoming text datastream.  It is entirely likely that the regular expression will also have to be added to the output set as well since there are discrete lists for incoming (client) and outgoing (server) directions.
 
 
 #### sshd_policy_cluster.bro
+The most significant configuration options (besides the regular expressions described above) in this file involve the treatment of notices.  The complete set of possible notices look like:
 
+```
+                SSHD_RemoteExecHostile,
+                SSHD_Suspicous,
+                SSHD_SuspicousThreshold,
+                SSHD_Hostile,
+                SSHD_BadKey,
+                #
+                SSHD_POL_InvalUser,
+                SSHD_POL_AuthPassAtt,
+                SSHD_POL_PassSkip,
+                SSHD_POL_ChanPortOpen,
+                SSHD_POL_ChanPortFwrd,
+                SSHD_POL_ChanPostFwrd,
+                SSHD_POL_ChanSetFwrd,
+                SSHD_POL_Socks4,
+                SSHD_POL_Socks5,
+                SSHD_POL_SesInChanOpen,
+                SSHD_POL_SesNew,
+                SSHD_POL_DirTCPIP,
+                SSHD_POL_TunInit,
+                SSHD_POL_x11fwd, 
+```
+Each of these represents something happening on the isshd side - for example when ssh channel port forwarding is used by a client, a SSHD_POL_ChanPortFwrd notice will be triggered *if* it is configured to do so.  This allows a more granular control of what each site may find interesting.  The list of notice types is static and is mostly driven by the set of events that have been chosen from within the iOpenSSH code itself. 
 
+The decision to trigger a notice is controlled by the variable with the same name as the event that triggers it.  For example the SSHD_POL_InvalUser notice is normally triggered as seen by:
+
+	        global auth_invalid_user_notice = T &redef;
+
+in the sshd_policy_cluster.bro file.  By adding the line:
+
+		redef SSHD_POLICY::auth_invalid_user_notice = F;
+
+the activation of various notices can be turned on and off.
+
+In addition to the sets of hostile content (already described), there is also a set of behaviors that is described as "suspicious".  These represent unusual actions on the part of the user which by themselves are not cause for alarm, but if enough of them are seen it might be.  Both the list of  commands as well as the number/threshold can be set at run time if the default values are not satisfactory.
 
 ####  host_core/notice_action.bro
+This file controls the action associated with the notice.  The options are log, email or page.  Say you have a problem with ssh tunneling.  The default behavior for this notice is (from notice_action.bro):
 
+	n_act[SSHD_POLICY::SSHD_POL_TunInit]            = ACT_L;
 
+which assigns the action log to the activation of this notice.  Adding the line:
+
+	HOST_CORE_ACT::n_act[SSHD_POLICY::SSHD_POL_TunInit] = HOST_CORE_ACT::ACT_P;
+
+will change the action to page (also adding by default log and email as well).
 
 
