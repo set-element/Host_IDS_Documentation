@@ -22,69 +22,7 @@ Submodule path 'src/3rdparty': checked out '6a429e79bbaf0fcc11eff5f639bfb9d1f62b
 [scottc@sdn-n scratch]$
 ```
 
-To add the raw_unescape_URI() function, go to the "src/analyzer/protocol/http" directory and edit the functions.bif file .  At the bottom of the file add the following:
-
-```
-function raw_unescape_URI%(URI: string%): string
-        %{
-        const u_char* line = URI->Bytes();
-        const u_char* const line_end = line + URI->Len();
-
-        byte_vec decoded_URI = new u_char[line_end - line + 1];
-        byte_vec URI_p = decoded_URI;
-
-        while ( line < line_end )
-                {
-                if ( *line == '%' )
-                        {
-                        ++line;
-
-                        if ( line == line_end )
-                                {
-                                // How to deal with % at end of line?
-                                break;
-                                }
-                        else if ( *line == '%' )
-                                {
-                                // Double '%' might be either due to
-                                // software bug, or more likely, an
-                                // evasion (e.g. used by Nimda).
-                                --line; // ignore the first '%'
-                                }
-                        else if ( isxdigit(line[0]) && isxdigit(line[1]) )
-                                {
-                                *URI_p++ = (decode_hex(line[0]) << 4) +
-                                           decode_hex(line[1]);
-                                ++line; // place line at the last hex digit
-                                }
-                        else
-                                {
-                                *URI_p++ = '%'; // put back initial '%'
-                                *URI_p++ = *line; // take char w/o interp.
-                                }
-                        }
-                else
-                        {
-                        *URI_p++ = *line;
-                        }
-
-                ++line;
-                }
-
-        URI_p[0] = 0;
-
-        StringVal* rsv = new StringVal( (int)(URI_p - decoded_URI), (const char*)decoded_URI);
-       free(decoded_URI);
-
-       return rsv;
-       %}
-```
-
-This will create a function that you can call from a script that will return the full URI decoded bitstream from an encoded string.  The bitstream can contain hostile binary data so that data should be treated with extreme care regarding printing it to the operators terminal or logging.
-
-Now you can just 'configure' and 'make install' as you might in any other install.
-
-### Configure the isshd Side
+### Configure the iSSHD Bro Policy
 
 For the first install, I will show how to configure a standalone (non-cluster) version of the analyzer.  The assumption here is that the install contains:
 
@@ -127,7 +65,7 @@ redef SSHD_IN_STREAM::DATANODE = T;
 with the value expressed in SSHD_IN_STREAM::data_file being the location of the isshd data file.  This file will be read in a 'tail -f' manner
 
 
-### iSSHD
+### iSSHD Policy Details
 The set of files used to run and configure this are as follows:
 
 -----
