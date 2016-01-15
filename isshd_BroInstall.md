@@ -94,7 +94,7 @@ The role of the core policy is to provide basic logging, the maintenance of sess
 
 From a configuration perspective the most interesting files to look at are sshd_signatures.bro which defines what is interesting to the policy, sshd_policy_cluster.bro which events should see notices, and host_core/notice_action.bro which tells bro where to route the notice type (log/email/page).
 
-####  sshd_signatures.bro 
+####  sshd_signatures.bro
 The sshd_signatures file contains sets of regular expressions that identify user behaviors that are considered hostile, suspicious or of interest to the analyzer operator.  In the event that a match needs to be added or removed, it is *highly* suggested that the original policy files not be changed.
 
 For example if the signature "/SCOTTTEST_IN/" is, for whatever reason causing you grief, you can remove it by adding the following line in the local.bro :
@@ -127,9 +127,9 @@ The most significant configuration options (besides the regular expressions desc
                 SSHD_POL_SesNew,
                 SSHD_POL_DirTCPIP,
                 SSHD_POL_TunInit,
-                SSHD_POL_x11fwd, 
+                SSHD_POL_x11fwd,
 ```
-Each of these represents something happening on the isshd side - for example when ssh channel port forwarding is used by a client, a SSHD_POL_ChanPortFwrd notice will be triggered *if* it is configured to do so.  This allows a more granular control of what each site may find interesting.  The list of notice types is static and is mostly driven by the set of events that have been chosen from within the iOpenSSH code itself. 
+Each of these represents something happening on the isshd side - for example when ssh channel port forwarding is used by a client, a SSHD_POL_ChanPortFwrd notice will be triggered *if* it is configured to do so.  This allows a more granular control of what each site may find interesting.  The list of notice types is static and is mostly driven by the set of events that have been chosen from within the iOpenSSH code itself.
 
 The decision to trigger a notice is controlled by the variable with the same name as the event that triggers it.  For example the SSHD_POL_InvalUser notice is normally triggered as seen by:
 
@@ -139,7 +139,7 @@ in the sshd_policy_cluster.bro file.  By adding the line:
 
 		redef SSHD_POLICY::auth_invalid_user_notice = F;
 
-the activation of various notices can be turned on and off.
+to your local config file, the activation of various notices can be turned on and off.
 
 In addition to the sets of hostile content (already described), there is also a set of behaviors that is described as "suspicious".  These represent unusual actions on the part of the user which by themselves are not cause for alarm, but if enough of them are seen it might be.  Both the list of  commands as well as the number/threshold can be set at run time if the default values are not satisfactory.
 
@@ -150,8 +150,6 @@ This file controls the action associated with the notice.  The options are log, 
 
 which assigns the action log to the activation of this notice.  Adding the line:
 
-	HOST_CORE_ACT::n_act[SSHD_POLICY::SSHD_POL_TunInit] = HOST_CORE_ACT::ACT_P;
+	  redef HOST_CORE_ACT::n_act[SSHD_POLICY::SSHD_POL_TunInit] = HOST_CORE_ACT::ACT_P;
 
 will change the action to page (also adding by default log and email as well).
-
-
